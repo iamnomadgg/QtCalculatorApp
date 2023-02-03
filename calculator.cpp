@@ -1,5 +1,7 @@
 #include "calculator.h"
 #include "./ui_calculator.h"
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 
 double calcVal = 0.0;
 bool divTrigger = false;
@@ -22,6 +24,15 @@ Calculator::Calculator(QWidget *parent)
         numButtons[i] = Calculator::findChild<QPushButton *>(butName);
         connect(numButtons[i], SIGNAL(released()), this, SLOT(NumPressed()));
     }
+
+    connect(ui->Add, SIGNAL(released()), this, SLOT(MathButtonPressed()));
+    connect(ui->Subtract, SIGNAL(released()), this, SLOT(MathButtonPressed()));
+    connect(ui->Multiply, SIGNAL(released()), this, SLOT(MathButtonPressed()));
+    connect(ui->Divide, SIGNAL(released()), this, SLOT(MathButtonPressed()));
+
+    connect(ui->Equals, SIGNAL(released()), this, SLOT(EqualButtonPressed()));
+
+    connect(ui->ChangeSign, SIGNAL(released()), this, SLOT(ChangeNumberSign()));
 
 }
 
@@ -47,3 +58,60 @@ void Calculator::NumPressed()
     }
 }
 
+void Calculator::MathButtonPressed()
+{
+    QString displayVal = ui->Display->text();
+    calcVal = displayVal.toDouble();
+    QPushButton* button = (QPushButton *) sender();
+    QString butVal = button->text();
+    if( QString::compare(butVal, "/", Qt::CaseInsensitive) == 0 )
+    {
+        divTrigger = true;
+    }
+    else if( QString::compare(butVal, "*", Qt::CaseInsensitive) == 0 )
+    {
+        multTrigger = true;
+    }
+    else if( QString::compare(butVal, "+", Qt::CaseInsensitive) == 0 )
+    {
+        addTrigger = true;
+    }
+    else
+    {
+        subTrigger = true;
+    }
+    ui->Display->setText("");
+}
+
+void Calculator::EqualButtonPressed()
+{
+    double solution = 0.0;
+    QString displayVal = ui->Display->text();
+    double dblDisplayVal = displayVal.toDouble();
+    if(addTrigger || subTrigger || multTrigger || divTrigger)
+    {
+        if(addTrigger)
+            solution = calcVal + dblDisplayVal;
+        else if(subTrigger)
+            solution = calcVal - dblDisplayVal;
+        else if(multTrigger)
+            solution = calcVal * dblDisplayVal;
+        else
+            solution = calcVal / dblDisplayVal;
+    }
+    ui->Display->setText(QString::number(solution));
+}
+
+void Calculator::ChangeNumberSign()
+{
+    QString displayVal = ui->Display->text();
+    QRegularExpression reg("[-]?[0-9.]*");
+    QRegularExpressionMatch match = reg.match(displayVal);
+
+    if (match.hasMatch())
+    {
+        double dblDisplayVal = displayVal.toDouble();
+        double dblDisplayValSign = -1 * dblDisplayVal;
+        ui->Display->setText(QString::number(dblDisplayValSign));
+    }
+}
